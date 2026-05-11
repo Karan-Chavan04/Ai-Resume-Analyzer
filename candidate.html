@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Candidate Portal | AI Career Connect</title>
+    <style>
+        :root {
+            --primary: #10b981;
+            --bg: #f0fdf4;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+            margin: 0;
+        }
+
+        .box {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            width: 500px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .back-link {
+            display: block;
+            margin-bottom: 25px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        h2 {
+            color: #065f46;
+            margin-top: 0;
+        }
+
+        input {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 700;
+        }
+
+        .profile-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border: 1px solid #f1f5f9;
+        }
+
+        .progress-bg {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 4px;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            background: var(--primary);
+            height: 100%;
+            border-radius: 4px;
+            transition: 0.8s;
+        }
+
+        .missing-tag {
+            color: #ef4444;
+            font-size: 12px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body onload="loadProfiles()">
+    <div class="box">
+        <a href="index.html" class="back-link">← Back to Home</a>
+        <h2>Join the Talent Pool</h2>
+        <input id="name" placeholder="Full Name">
+        <input id="email" placeholder="Email Address">
+        <div style="font-size:12px; margin-bottom:5px; color:#64748b;">Upload Resume (PDF)</div>
+        <input type="file" id="resume" style="padding:8px; border:none;">
+        <button onclick="register()">Create My Profile</button>
+
+        <h3 style="margin-top:40px; color:#475569; font-size:1rem;">Registered Profiles (ID Lookup)</h3>
+        <div id="profileList" style="max-height:150px; overflow-y:auto;"></div>
+
+        <hr style="border:0; border-top:1px solid #f1f5f9; margin:30px 0;">
+        <input type="number" id="candId" placeholder="Enter your ID to see matches">
+        <button onclick="checkJobs()" style="background:#0ea5e9">Find My Best Fit</button>
+        <div id="jobResults" style="margin-top:20px;"></div>
+    </div>
+
+    <script>
+        async function loadProfiles() {
+            const res = await fetch("http://127.0.0.1:8000/list_candidates");
+            const data = await res.json();
+            document.getElementById('profileList').innerHTML = data.map(p => `
+                <div class="profile-card">
+                    <span>ID: <b>${p.id}</b> — ${p.name}</span>
+                    <span style="color:#ef4444; cursor:pointer; font-size:12px;" onclick="deleteCand(${p.id})">Delete</span>
+                </div>
+            `).join('');
+        }
+
+        async function register() {
+            const f = new FormData();
+            f.append("name", document.getElementById('name').value);
+            f.append("email", document.getElementById('email').value);
+            f.append("file", document.getElementById('resume').files[0]);
+            await fetch("http://127.0.0.1:8000/register_candidate", { method: "POST", body: f });
+            loadProfiles();
+        }
+
+        async function deleteCand(id) {
+            const key = prompt("Enter Admin Secret Key to delete:");
+            if (!key) return;
+
+            // Fixed endpoint to /delete_candidate and added refresh logic
+            const res = await fetch(`http://127.0.0.1:8000/delete_candidate/${id}?secret=${key}`, {
+                method: "DELETE"
+            });
+            const data = await res.json();
+
+            if (data.status === "error") {
+                alert(data.message);
+            } else {
+                loadProfiles(); // Refresh the candidate list
+            }
+        }
+
+        async function checkJobs() {
+            const id = document.getElementById('candId').value;
+            const res = await fetch(`http://127.0.0.1:8000/get_jobs_for_candidate/${id}`);
+            const data = await res.json();
+            document.getElementById('jobResults').innerHTML = data.available_jobs.map(j => `
+                <div style="margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid #f1f5f9;">
+                    <div style="display:flex; justify-content:space-between; font-weight:600; font-size:0.95rem;">
+                        <span>${j.title} @ ${j.company}</span>
+                        <span style="color:#0ea5e9">${j.score}% Match</span>
+                    </div>
+                    <div class="progress-bg"><div class="progress-fill" style="width:${j.score}%"></div></div>
+                    <div class="missing-tag">${j.missing.length ? 'Missing: ' + j.missing.join(', ') : '✨ Perfect Match!'}</div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+
+</html>

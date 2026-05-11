@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Recruiter Dashboard | AI Career Connect</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+            margin: 0;
+        }
+
+        .box {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            width: 650px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .back-link {
+            display: block;
+            margin-bottom: 25px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        h2 {
+            color: #1e293b;
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            margin: 10px 0 20px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        button#postBtn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .job-card {
+            background: #fff;
+            border: 1px solid #f1f5f9;
+            padding: 20px;
+            margin-top: 12px;
+            border-radius: 12px;
+            position: relative;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .job-card:hover {
+            transform: translateY(-2px);
+            border-color: #cbd5e1;
+        }
+
+        .del-btn {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            color: var(--danger);
+            cursor: pointer;
+            border: 1px solid #fee2e2;
+            background: #fef2f2;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+
+        .progress-bg {
+            background: #f1f5f9;
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: var(--primary);
+            height: 100%;
+            transition: 0.6s ease-out;
+        }
+    </style>
+</head>
+
+<body onload="loadJobs()">
+    <div class="box">
+        <a href="index.html" class="back-link">← Back to Home</a>
+        <h2>Post New Vacancy</h2>
+        <input id="company" placeholder="Company Name (e.g. Google)">
+        <input id="title" placeholder="Job Title (e.g. Python Developer)">
+        <textarea id="desc" placeholder="Paste Job Description here..." rows="4"></textarea>
+        <button id="postBtn" onclick="postJob()">Broadcast Job</button>
+
+        <h3 style="margin-top:40px; color:#475569;">Active Listings</h3>
+        <div id="jobList"></div>
+        <div id="matchResults" style="margin-top:30px;"></div>
+    </div>
+
+    <script>
+        async function loadJobs() {
+            const res = await fetch("http://127.0.0.1:8000/list_jobs");
+            const jobs = await res.json();
+            document.getElementById('jobList').innerHTML = jobs.map(j => `
+                <div class="job-card">
+                    <button class="del-btn" onclick="deleteJob(${j.id})">Remove</button>
+                    <div onclick="findMatches(${j.id})" style="cursor:pointer; padding-right: 80px;">
+                        <div style="font-weight:700; color:#1e293b; font-size:1.1rem;">${j.title}</div>
+                        <div style="color:#64748b; font-size:0.9rem;">${j.company} • ${j.date}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function postJob() {
+            const f = new FormData();
+            f.append("company", document.getElementById('company').value);
+            f.append("title", document.getElementById('title').value);
+            f.append("description", document.getElementById('desc').value);
+            await fetch("http://127.0.0.1:8000/post_job", { method: "POST", body: f });
+            loadJobs();
+        }
+
+        async function deleteJob(id) {
+            const key = prompt("Enter Admin Secret Key to delete:");
+            if (!key) return; // User cancelled
+
+            const res = await fetch(`http://127.0.0.1:8000/delete_job/${id}?secret=${key}`, {
+                method: "DELETE"
+            });
+            const data = await res.json();
+
+            if (data.status === "error") {
+                alert(data.message);
+            } else {
+                loadJobs();
+            }
+        }
+
+        async function findMatches(id) {
+            const res = await fetch(`http://127.0.0.1:8000/get_matches_for_job/${id}`);
+            const data = await res.json();
+            let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h4 style="margin:0;">Top Talent for ${data.job_title}</h4>
+                <button onclick="window.open('http://127.0.0.1:8000/export_job_report/${id}')" style="background:#64748b; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">Export List</button>
+            </div>`;
+            data.results.forEach(c => {
+                html += `<div style="margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; font-weight:600;">
+                        <span>${c.name}</span> <span style="color:var(--primary)">${c.score}% Match</span>
+                    </div>
+                    <div class="progress-bg"><div class="progress-fill" style="width:${c.score}%"></div></div>
+                </div>`;
+            });
+            document.getElementById('matchResults').innerHTML = html;
+        }
+    </script>
+</body>
+
+</html>

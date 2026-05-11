@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Career Connect | Home</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background: linear-gradient(135deg, #f4f7f6 0%, #dceefb 100%); 
+        }
+        .main-card { 
+            background: white; 
+            padding: 3rem; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); 
+            text-align: center; 
+            width: 500px;
+        }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
+        p { color: #7f8c8d; margin-bottom: 30px; }
+        
+        .role-selection { 
+            display: flex; 
+            gap: 20px; 
+            justify-content: center; 
+        }
+        
+        .role-btn {
+            flex: 1;
+            padding: 25px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .role-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        .candidate { background-color: #27ae60; }
+        .recruiter { background-color: #e67e22; }
+
+        .icon { font-size: 2rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <h1>AI Career Connect</h1>
+        <p>Intelligence-driven job matching for a modern world.</p>
+        
+        <div class="role-selection">
+            <a href="candidate.html" class="role-btn candidate">
+                <span class="icon">🎓</span>
+                Candidate Portal
+            </a>
+            
+            <a href="recruiter.html" class="role-btn recruiter">
+                <span class="icon">💼</span>
+                Recruiter Portal
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>
