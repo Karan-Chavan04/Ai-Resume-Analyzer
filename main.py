@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 import pdfplumber
@@ -8,6 +9,14 @@ import re
 from datetime import datetime
 
 app = FastAPI()
+
+@app.get("/")
+async def read_index():
+    return FileResponse('index.html')
+
+@app.get("/{filename}")
+async def get_site(filename: str):
+    return FileResponse(filename)
 
 app.add_middleware(
     CORSMiddleware,
